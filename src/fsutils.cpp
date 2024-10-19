@@ -1,4 +1,5 @@
 #include "fsutils.h"
+#include <filesystem>
 
 #if _WIN32
 #include <windows.h>
@@ -65,6 +66,10 @@ bool filepath_is_readable(const std::filesystem::path &path) {
 
 std::filesystem::path find_resource_file(const std::filesystem::path &path) {
     if (filepath_is_readable(path)) {
+        return path;
+    }
+
+    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
         return path;
     }
 

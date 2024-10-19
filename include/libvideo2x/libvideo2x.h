@@ -23,9 +23,10 @@ extern "C" {
 #include <libavformat/avformat.h>
 
 // Enum to specify filter type
-enum FilterType {
-    FILTER_LIBPLACEBO,
-    FILTER_REALESRGAN
+enum FilterBackend {
+    FILTER_BACKEND_LIBPLACEBO,
+    FILTER_BACKEND_REALESRGAN,
+    FILTER_BACKEND_RIFE
 };
 
 // Enum to specify log level
@@ -54,12 +55,25 @@ struct RealESRGANConfig {
     const char *model;
 };
 
+// Configuration for RIFE filter
+struct RIFEConfig {
+    int gpuid;
+    bool tta_mode;
+    bool tta_temporal_mode;
+    bool uhd_mode;
+    int num_threads;
+    bool rife_v2;
+    bool rife_v4;
+    const char *model_dir;
+};
+
 // Unified filter configuration
 struct FilterConfig {
-    enum FilterType filter_type;
+    enum FilterBackend filter_backend;
     union {
         struct LibplaceboConfig libplacebo;
         struct RealESRGANConfig realesrgan;
+        struct RIFEConfig rife;
     } config;
 };
 
@@ -67,6 +81,7 @@ struct FilterConfig {
 struct EncoderConfig {
     int output_width;
     int output_height;
+    struct AVRational frame_rate;
     bool copy_streams;
     enum AVCodecID codec;
     enum AVPixelFormat pix_fmt;

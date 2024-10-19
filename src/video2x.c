@@ -53,7 +53,14 @@ static struct option long_options[] = {
     {"gpuid", required_argument, NULL, 'g'},
     {"model", required_argument, NULL, 'm'},
     {"scale", required_argument, NULL, 'r'},
-    {0, 0, 0, 0}
+    {0, 0, 0, 0},
+
+    // RIFE options
+    {"uhd", no_argument, NULL, 'u'},
+    {"threads", required_argument, NULL, 'n'},
+    {"rife-v2", no_argument, NULL, '2'},
+    {"rife-v4", no_argument, NULL, '4'},
+    {"model-dir", required_argument, NULL, 'd'},
 };
 
 // List of valid RealESRGAN models
@@ -61,6 +68,21 @@ const char *valid_realesrgan_models[] = {
     "realesrgan-plus",
     "realesrgan-plus-anime",
     "realesr-animevideov3",
+};
+
+// List of valid RIFE models
+const char *valid_rife_models[] = {
+    "rife",
+    "rife-HD",
+    "rife-UHD",
+    "rife-anime",
+    "rife-v2",
+    "rife-v2.3",
+    "rife-v2.4",
+    "rife-v3.0",
+    "rife-v3.1",
+    "rife-v4",
+    "rife-v4.6",
 };
 
 // Indicate if a newline needs to be printed before the next output
@@ -94,6 +116,13 @@ struct arguments {
     int gpuid;
     const char *model;
     int scaling_factor;
+
+    // RIFE options
+    bool uhd;
+    int threads;
+    bool rife_v2;
+    bool rife_v4;
+    const char *model_dir;
 };
 
 struct ProcessVideoThreadArguments {
@@ -142,6 +171,18 @@ int is_valid_realesrgan_model(const char *model) {
     return 0;
 }
 
+int is_valid_rife_model(const char *model) {
+    if (!model) {
+        return 0;
+    }
+    for (int i = 0; i < sizeof(valid_rife_models) / sizeof(valid_rife_models[0]); i++) {
+        if (strcmp(model, valid_rife_models[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 void print_help() {
     printf("Usage: video2x [OPTIONS]\n");
     printf("\nOptions:\n");
@@ -175,6 +216,13 @@ void print_help() {
     printf("  -g, --gpuid		Vulkan GPU ID (default: 0)\n");
     printf("  -m, --model		Name of the model to use\n");
     printf("  -r, --scale		Scaling factor (2, 3, or 4)\n");
+
+    printf("\nRIFE Options:\n");
+    printf("  --uhd		Enable UHD mode\n");
+    printf("  -n, --threads		Number of threads to use (default: 1)\n");
+    printf("  --rife-v2		Use RIFE v2 model\n");
+    printf("  --rife-v4		Use RIFE v4 model\n");
+    printf("  -d, --model-dir	Path to custom RIFE model directory\n");
 
     printf("\nExamples Usage:\n");
     printf("  video2x -i in.mp4 -o out.mp4 -f libplacebo -s anime4k-mode-a -w 3840 -h 2160\n");
@@ -212,8 +260,15 @@ void parse_arguments(int argc, char **argv, struct arguments *arguments) {
     arguments->model = NULL;
     arguments->scaling_factor = 0;
 
+    // RIFE options
+    arguments->uhd = false;
+    arguments->threads = 1;
+    arguments->rife_v2 = false;
+    arguments->rife_v4 = false;
+    arguments->model_dir = NULL;
+
     while ((c = getopt_long(
-                argc, argv, "i:o:f:a:c:x:p:b:q:s:w:h:r:m:v", long_options, &option_index
+                argc, argv, "i:o:f:a:c:x:p:b:q:s:w:h:r:m:u:n:2:4:d:v", long_options, &option_index
             )) != -1) {
         switch (c) {
             case 'i':
@@ -289,6 +344,25 @@ void parse_arguments(int argc, char **argv, struct arguments *arguments) {
                     fprintf(stderr, "Error: Scaling factor must be 2, 3, or 4.\n");
                     exit(1);
                 }
+                break;
+            case 'd':
+                arguments->model_dir = optarg;
+                break;
+            case 'n':
+                arguments->threads = atoi(optarg);
+                if (arguments->threads <= 0) {
+                    fprintf(stderr, "Error: Number of threads must be greater than 0.\n");
+                    exit(1);
+                }
+                break;
+            case '2':
+                arguments->rife_v2 = true;
+                break;
+            case '4':
+                arguments->rife_v4 = true;
+                break;
+            case 'u':
+                arguments->uhd = true;
                 break;
             case 'v':
                 printf("Video2X version %s\n", LIBVIDEO2X_VERSION_STRING);
@@ -412,16 +486,26 @@ int main(int argc, char **argv) {
     // Setup filter configurations based on the parsed arguments
     struct FilterConfig filter_config;
     if (strcmp(arguments.filter_type, "libplacebo") == 0) {
-        filter_config.filter_type = FILTER_LIBPLACEBO;
+        filter_config.filter_backend = FILTER_BACKEND_LIBPLACEBO;
         filter_config.config.libplacebo.output_width = arguments.output_width;
         filter_config.config.libplacebo.output_height = arguments.output_height;
         filter_config.config.libplacebo.shader_path = arguments.shader_path;
     } else if (strcmp(arguments.filter_type, "realesrgan") == 0) {
-        filter_config.filter_type = FILTER_REALESRGAN;
+        filter_config.filter_backend = FILTER_BACKEND_REALESRGAN;
         filter_config.config.realesrgan.gpuid = arguments.gpuid;
         filter_config.config.realesrgan.tta_mode = 0;
         filter_config.config.realesrgan.scaling_factor = arguments.scaling_factor;
         filter_config.config.realesrgan.model = arguments.model;
+    } else if (strcmp(arguments.filter_type, "rife") == 0) {
+        filter_config.filter_backend = FILTER_BACKEND_RIFE;
+        filter_config.config.rife.gpuid = arguments.gpuid;
+        filter_config.config.rife.tta_mode = 0;
+        filter_config.config.rife.tta_temporal_mode = 0;
+        filter_config.config.rife.uhd_mode = arguments.uhd;
+        filter_config.config.rife.num_threads = arguments.threads;
+        filter_config.config.rife.rife_v2 = arguments.rife_v2;
+        filter_config.config.rife.rife_v4 = arguments.rife_v4;
+        filter_config.config.rife.model_dir = arguments.model_dir;
     } else {
         fprintf(stderr, "Error: Invalid filter type specified.\n");
         return 1;

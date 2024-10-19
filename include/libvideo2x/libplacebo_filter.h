@@ -12,7 +12,7 @@ extern "C" {
 #include "filter.h"
 
 // LibplaceboFilter class definition
-class LibplaceboFilter : public Filter {
+class LibplaceboFilter : public UpscalingFilter {
    private:
     AVFilterGraph *filter_graph;
     AVFilterContext *buffersrc_ctx;
@@ -33,7 +33,7 @@ class LibplaceboFilter : public Filter {
     int init(AVCodecContext *dec_ctx, AVCodecContext *enc_ctx, AVBufferRef *hw_ctx) override;
 
     // Processes an input frame and returns the processed frame
-    int process_frame(AVFrame *input_frame, AVFrame **output_frame) override;
+    int upscale(AVFrame *prev_frame, AVFrame *in_frame, AVFrame **out_frame) override;
 
     // Flushes any remaining frames
     int flush(std::vector<AVFrame *> &processed_frames) override;
