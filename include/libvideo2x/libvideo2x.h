@@ -23,9 +23,9 @@ extern "C" {
 #include <libavformat/avformat.h>
 
 // Enum to specify filter type
-enum FilterType {
-    FILTER_LIBPLACEBO,
-    FILTER_REALESRGAN
+enum FilterBackend {
+    FILTER_BACKEND_LIBPLACEBO,
+    FILTER_BACKEND_REALESRGAN
 };
 
 // Enum to specify log level
@@ -56,7 +56,7 @@ struct RealESRGANConfig {
 
 // Unified filter configuration
 struct FilterConfig {
-    enum FilterType filter_type;
+    enum FilterBackend filter_type;
     union {
         struct LibplaceboConfig libplacebo;
         struct RealESRGANConfig realesrgan;

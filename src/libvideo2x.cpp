@@ -351,11 +351,11 @@ extern "C" int process_video(
     // Initialize output dimensions based on filter configuration
     int output_width = 0, output_height = 0;
     switch (filter_config->filter_type) {
-        case FILTER_LIBPLACEBO:
+        case FILTER_BACKEND_LIBPLACEBO:
             output_width = filter_config->config.libplacebo.out_width;
             output_height = filter_config->config.libplacebo.out_height;
             break;
-        case FILTER_REALESRGAN:
+        case FILTER_BACKEND_REALESRGAN:
             output_width = dec_ctx->width * filter_config->config.realesrgan.scaling_factor;
             output_height = dec_ctx->height * filter_config->config.realesrgan.scaling_factor;
             break;
@@ -397,7 +397,7 @@ extern "C" int process_video(
     }
 
     // Create and initialize the appropriate filter
-    if (filter_config->filter_type == FILTER_LIBPLACEBO) {
+    if (filter_config->filter_type == FILTER_BACKEND_LIBPLACEBO) {
         const auto &config = filter_config->config.libplacebo;
         if (!config.shader_path) {
             spdlog::error("Shader path must be provided for the libplacebo filter");
@@ -407,7 +407,7 @@ extern "C" int process_video(
         filter = new LibplaceboFilter{
             config.out_width, config.out_height, std::filesystem::path(config.shader_path)
         };
-    } else if (filter_config->filter_type == FILTER_REALESRGAN) {
+    } else if (filter_config->filter_type == FILTER_BACKEND_REALESRGAN) {
         const auto &config = filter_config->config.realesrgan;
         if (!config.model) {
             spdlog::error("Model name must be provided for the RealESRGAN filter");

@@ -273,11 +273,24 @@ include(ExternalProject)
 
 # Add librealesrgan-ncnn-vulkan as an external project
 ExternalProject_Add(
-    realesrgan
+    librealesrgan-ncnn-vulkan
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/third_party/librealesrgan_ncnn_vulkan/src
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/realesrgan_install
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+        -DUSE_SYSTEM_NCNN=${USE_SYSTEM_NCNN}
+    BUILD_ALWAYS ON
+    INSTALL_COMMAND ${CMAKE_COMMAND} --build . --target install --config ${CMAKE_BUILD_TYPE}
+)
+
+# Add librealesrgan-ncnn-vulkan as an external project
+ExternalProject_Add(
+    librife-ncnn-vulkan
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/third_party/librife_ncnn_vulkan/src
+    CMAKE_ARGS
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/rife_install
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DUSE_SYSTEM_NCNN=${USE_SYSTEM_NCNN}
     BUILD_ALWAYS ON
@@ -300,8 +313,8 @@ else()
     set_target_properties(libvideo2x PROPERTIES OUTPUT_NAME video2x)
 endif()
 
-# Ensure libvideo2x depends on realesrgan being built and installed
-add_dependencies(libvideo2x realesrgan)
+# Ensure that the shared library is built after the external projects
+add_dependencies(libvideo2x librealesrgan-ncnn-vulkan librife-ncnn-vulkan)
 
 # Include directories for the shared library
 target_include_directories(libvideo2x PRIVATE
@@ -310,6 +323,7 @@ target_include_directories(libvideo2x PRIVATE
     ${PROJECT_SOURCE_DIR}/include
     ${PROJECT_SOURCE_DIR}/include/libvideo2x
     ${PROJECT_SOURCE_DIR}/third_party/librealesrgan_ncnn_vulkan/src
+    ${PROJECT_SOURCE_DIR}/third_party/librife_ncnn_vulkan/src
 )
 
 # Compile options for the shared library
@@ -319,15 +333,18 @@ target_compile_options(libvideo2x PRIVATE
     $<$<CONFIG:Debug>:-g -DDEBUG>
 )
 
-# Define the path to the built libresrgan-ncnn-vulkan library
+# Define the paths to the shared libraries
 if(WIN32)
     set(REALESRGAN_LIB ${CMAKE_BINARY_DIR}/realesrgan_install/lib/librealesrgan-ncnn-vulkan.lib)
+    set(RIFE_LIB ${CMAKE_BINARY_DIR}/rife_install/lib/librife-ncnn-vulkan.lib)
 else()
     set(REALESRGAN_LIB ${CMAKE_BINARY_DIR}/realesrgan_install/lib/librealesrgan-ncnn-vulkan.so)
+    set(RIFE_LIB ${CMAKE_BINARY_DIR}/rife_install/lib/librife-ncnn-vulkan.so)
 endif()
+list(APPEND ALL_LIBRARIES ${REALESRGAN_LIB} ${RIFE_LIB})
 
 # Link the shared library with the dependencies
-target_link_libraries(libvideo2x PRIVATE ${ALL_LIBRARIES} ${REALESRGAN_LIB})
+target_link_libraries(libvideo2x PRIVATE ${ALL_LIBRARIES})
 
 if(NOT WIN32)
     if (USE_SYSTEM_NCNN)
@@ -408,33 +425,20 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libvideo2x/version.h
 # Platform-specific installation rules
 if(WIN32)
     # Install Windows-specific dependencies
-    install(FILES ${CMAKE_BINARY_DIR}/realesrgan_install/bin/librealesrgan-ncnn-vulkan.dll
-        DESTINATION ${INSTALL_BIN_DESTINATION}
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                    GROUP_READ GROUP_EXECUTE
-                    WORLD_READ WORLD_EXECUTE
-    )
-    install(FILES ${FFMPEG_BASE_PATH}/bin/swscale-8.dll
-                  ${FFMPEG_BASE_PATH}/bin/avcodec-61.dll
-                  ${FFMPEG_BASE_PATH}/bin/avdevice-61.dll
-                  ${FFMPEG_BASE_PATH}/bin/avfilter-10.dll
-                  ${FFMPEG_BASE_PATH}/bin/avformat-61.dll
-                  ${FFMPEG_BASE_PATH}/bin/avutil-59.dll
-                  ${FFMPEG_BASE_PATH}/bin/postproc-58.dll
-                  ${FFMPEG_BASE_PATH}/bin/swresample-5.dll
-        DESTINATION ${INSTALL_BIN_DESTINATION}
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                    GROUP_READ GROUP_EXECUTE
-                    WORLD_READ WORLD_EXECUTE
-    )
-    install(FILES ${OPENCV_BASE_PATH}/build/x64/vc16/bin/opencv_world4100.dll
-                  ${OPENCV_BASE_PATH}/build/x64/vc16/bin/opencv_videoio_msmf4100_64.dll
-        DESTINATION ${INSTALL_BIN_DESTINATION}
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
-                    GROUP_READ GROUP_EXECUTE
-                    WORLD_READ WORLD_EXECUTE
-    )
-    install(FILES ${NCNN_BASE_PATH}/bin/ncnn.dll
+    install(FILES
+        ${CMAKE_BINARY_DIR}/realesrgan_install/bin/librealesrgan-ncnn-vulkan.dll
+        ${CMAKE_BINARY_DIR}/rife_install/bin/librife-ncnn-vulkan.dll
+        ${FFMPEG_BASE_PATH}/bin/swscale-8.dll
+        ${FFMPEG_BASE_PATH}/bin/avcodec-61.dll
+        ${FFMPEG_BASE_PATH}/bin/avdevice-61.dll
+        ${FFMPEG_BASE_PATH}/bin/avfilter-10.dll
+        ${FFMPEG_BASE_PATH}/bin/avformat-61.dll
+        ${FFMPEG_BASE_PATH}/bin/avutil-59.dll
+        ${FFMPEG_BASE_PATH}/bin/postproc-58.dll
+        ${FFMPEG_BASE_PATH}/bin/swresample-5.dll
+        ${OPENCV_BASE_PATH}/build/x64/vc16/bin/opencv_world4100.dll
+        ${OPENCV_BASE_PATH}/build/x64/vc16/bin/opencv_videoio_msmf4100_64.dll
+        ${NCNN_BASE_PATH}/bin/ncnn.dll
         DESTINATION ${INSTALL_BIN_DESTINATION}
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                     GROUP_READ GROUP_EXECUTE
@@ -442,7 +446,7 @@ if(WIN32)
     )
 else()
     # Install Unix-specific dependencies
-    install(FILES ${REALESRGAN_LIB}
+    install(FILES ${REALESRGAN_LIB} ${RIFE_LIB}
         DESTINATION ${INSTALL_LIB_DESTINATION}
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
                     GROUP_READ GROUP_EXECUTE

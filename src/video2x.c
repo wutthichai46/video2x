@@ -414,12 +414,12 @@ int main(int argc, char **argv) {
     // Setup filter configurations based on the parsed arguments
     struct FilterConfig filter_config;
     if (strcmp(arguments.filter_type, "libplacebo") == 0) {
-        filter_config.filter_type = FILTER_LIBPLACEBO;
+        filter_config.filter_type = FILTER_BACKEND_LIBPLACEBO;
         filter_config.config.libplacebo.out_width = arguments.out_width;
         filter_config.config.libplacebo.out_height = arguments.out_height;
         filter_config.config.libplacebo.shader_path = arguments.shader_path;
     } else if (strcmp(arguments.filter_type, "realesrgan") == 0) {
-        filter_config.filter_type = FILTER_REALESRGAN;
+        filter_config.filter_type = FILTER_BACKEND_REALESRGAN;
         filter_config.config.realesrgan.gpuid = arguments.gpuid;
         filter_config.config.realesrgan.tta_mode = 0;
         filter_config.config.realesrgan.scaling_factor = arguments.scaling_factor;
