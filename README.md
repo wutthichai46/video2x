@@ -43,7 +43,22 @@ You can download the latest Windows release from the [releases page](https://git
 
 ## [🐧 Install on Linux](https://aur.archlinux.org/packages/video2x-git)
 
+<<<<<<< HEAD
 You can install Video2X on Arch Linux using the [video2x-git](https://aur.archlinux.org/packages/video2x-git) package or download pre-compiled binaries from the [releases page](https://github.com/k4yt3x/video2x/releases/latest). If you'd like to build from source, refer to the [PKGBUILD](packaging/arch/PKGBUILD) file for a general overview of the required packages and commands. If you'd prefer not to compile the program from source, consider using the container image below.
+||||||| parent of 0d8f267 (docs(readme): updated README for 6.0.0)
+Join our Telegram discussion group to ask any questions you have about Video2X, chat directly with the developers, or discuss about super resolution technologies and the future of Video2X in general.
+
+## [🪟 Download Windows Releases](https://github.com/k4yt3x/video2x/releases/tag/4.8.1)
+
+The latest Windows release build based on version 4.8.1. Go to the [GUI](https://github.com/k4yt3x/video2x/wiki/GUI) page to see the basic usages of the GUI. Try the [mirror](https://files.k4yt3x.com/Projects/Video2X/latest) if you can't download releases directly from GitHub.
+
+## [📔 Google Colab](https://colab.research.google.com/drive/1gWEwcA9y57EsxwOjmLNmNMXPsafw0kGo)
+
+# You can use Video2X on [Google Colab](https://colab.research.google.com/) **for free** if you don't have a powerful GPU of your own. You can borrow a powerful GPU (Tesla K80, T4, P4, or P100) on Google's server for free for a maximum of 12 hours per session. **Please use the free resource fairly** and do not create sessions back-to-back and run upscaling 24/7. This might result in you getting banned. You can get [Colab Pro/Pro+](https://colab.research.google.com/signup/pricing) if you'd like to use better GPUs and get longer runtimes. Usage instructions are embedded in the [Colab Notebook](https://colab.research.google.com/drive/1gWEwcA9y57EsxwOjmLNmNMXPsafw0kGo).
+
+You can install Video2X on Arch Linux using the [video2x-git](https://aur.archlinux.org/packages/video2x-git) package or download pre-compiled binaries from the [releases page](https://github.com/k4yt3x/video2x/releases/latest). If you'd like to build from source, refer to the [PKGBUILD](PKGBUILD) file for a general overview of the required packages and commands. If you'd prefer not to compile the program from source, consider using the container image below.
+
+> > > > > > > 0d8f267 (docs(readme): updated README for 6.0.0)
 
 ## [📦 Container Image](https://github.com/k4yt3x/video2x/pkgs/container/video2x)
 
